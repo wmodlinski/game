@@ -7,9 +7,8 @@ import javafx.scene.control.Button;
 import javafx.scene.text.Text;
 
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.ResourceBundle;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class Controller implements Initializable {
 
@@ -46,13 +45,14 @@ public class Controller implements Initializable {
     private int playerTurn = 0;
 
     ArrayList<Button> buttons;
+    List<Button> removed = new LinkedList<>();
 
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        buttons = new ArrayList<>(Arrays.asList(button1,button2,button3,button4,button5,button6,button7,button8,button9));
+        buttons = new ArrayList<>(Arrays.asList(button1, button2, button3, button4, button5, button6, button7, button8, button9));
 
-        buttons.forEach(button ->{
+        buttons.forEach(button -> {
             setupButton(button);
             button.setFocusTraversable(false);
         });
@@ -64,7 +64,7 @@ public class Controller implements Initializable {
         tittleText.setText("Kółko i krzyżyk");
     }
 
-    public void resetButton(Button button){
+    public void resetButton(Button button) {
         button.setDisable(false);
         button.setText("");
     }
@@ -73,21 +73,43 @@ public class Controller implements Initializable {
         button.setOnMouseClicked(mouseEvent -> {
             setPlayerSymbol(button);
             button.setDisable(true);
-            checkIfGameIsOver();
+            boolean isGameOver = checkIfGameIsOver();
+
+            //odpal kod dla komputera
+            if (!isGameOver) {
+               cpuMove();
+            }
         });
     }
 
-    public void setPlayerSymbol(Button button){
-        if(playerTurn % 2 == 0){
+    public void cpuMove() {
+        List<Button> allButtons = Arrays.asList(button1, button2, button3, button4, button5, button6, button7, button8, button9);
+        List<Button> availableButtons = allButtons.stream()
+                .filter(b -> !b.isDisabled())
+                .collect(Collectors.toList());
+
+        Random random = new Random();
+
+        int buttonIndex = random.nextInt(availableButtons.size());
+
+        Button cpuButton = availableButtons.get(buttonIndex);
+        setPlayerSymbol(cpuButton);
+        cpuButton.setDisable(true);
+        checkIfGameIsOver();
+    }
+
+    public void setPlayerSymbol(Button button) {
+        if (playerTurn % 2 == 0) {
             button.setText("X");
             playerTurn = 1;
-        } else{
+        } else {
             button.setText("O");
             playerTurn = 0;
         }
     }
 
-    public void checkIfGameIsOver(){
+
+    public boolean checkIfGameIsOver() {
         for (int a = 0; a < 8; a++) {
             String line = switch (a) {
                 case 0 -> button1.getText() + button2.getText() + button3.getText();
@@ -103,11 +125,13 @@ public class Controller implements Initializable {
 
             if (line.equals("XXX")) {
                 tittleText.setText("X wygrał!");
-            }
-
-            else if (line.equals("OOO")) {
+                return true;
+            } else if (line.equals("OOO")) {
                 tittleText.setText("O wygrało!");
+                return true;
             }
+            return false;
         }
+        return false;
     }
 }
